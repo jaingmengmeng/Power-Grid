@@ -1,0 +1,172 @@
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Power Grid 房间</title>
+    <link rel="icon" type="image/x-icon" href="../src/img/power-grid-icon.png" />
+    <link rel="stylesheet" href="../src/css/bootstrap.min.css">
+    <script src="../src/jquery-3.3.1/jquery-3.3.1.min.js"></script>
+    <script src="../src/js/bootstrap.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        .btn-circle {
+            width: 30px;
+            height: 30px;
+            text-align: center;
+            padding: 6px 0;
+            font-size: 12px;
+            line-height: 1.428571429;
+            border-radius: 15px;
+        }
+
+        .btn-circle.btn-lg {
+            width: 50px;
+            height: 50px;
+            padding: 10px 16px;
+            font-size: 18px;
+            line-height: 1.33;
+            border-radius: 25px;
+        }
+
+        .btn-circle.btn-xl {
+            width: 70px;
+            height: 70px;
+            padding: 10px 16px;
+            font-size: 24px;
+            line-height: 1.33;
+            border-radius: 35px;
+        }
+
+        .page-header {
+            margin: 20px;
+        }
+
+        .player-card {
+            width: 33%;
+            height: 35%;
+        }
+
+        #footer {
+            height: 6%;
+            line-height: 350%;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            text-align: center;
+            background: #333;
+            color: #fff;
+            font-family: Arial;
+            font-size: 12px;
+            letter-spacing: 1px;
+            cursor: default;
+        }
+    </style>
+    <script type="text/javascript">
+        function getQueryVariable(variable) {
+            var query = window.location.search.substring(1);
+            var vars = query.split("&");
+            for (var i = 0; i < vars.length; i++) {
+                var pair = vars[i].split("=");
+                if (pair[0] == variable) { return decodeURI(pair[1]); }
+            }
+            return (false);
+        }
+        var user_name = getQueryVariable("name");
+        var room_id = getQueryVariable("roomid");
+        var owner = getQueryVariable("owner");
+        $('title').text('Power Grid ' + String(room_id) + ' 号房间');
+
+        $(document).ready(function () {
+            if (owner == 1) {
+                $("#begin").text("开始游戏");
+                $("#exit").text("退出房间");
+            } else {
+                document.getElementById("begin").style.display = "none";
+                $("#exit").text("退出房间");
+            }
+            load();
+        });
+
+        // 和服务器建立长连接
+        var socket = io.connect('/');
+        socket.emit('join', { user_name: user_name, room_id: room_id });
+
+        function leave() {
+            socket.emit('leave', { user_name: user_name, room_id: room_id, owner: owner });
+            var target_url = "hall.html?name=" + user_name;
+            setTimeout("window.location.href='" + target_url + "'", 500);
+        }
+
+        function begin() {
+            socket.emit('begin', { room_id: room_id });
+        }
+
+        function load() {
+            $('#players').empty();
+            $.ajax({
+                type: 'get',
+                url: '/get_all_players',
+                data: {
+                    room_id: room_id
+                },
+                success: function (data) {
+                    if (data.err_code == 1) {
+                        document.getElementById("players").innerHTML = data.message;
+                        leave();
+                    } else {
+                        var p_list = data.message;
+                        for (var i = 0; i < p_list.length; i++) {
+                            var player = p_list[i];
+                            $("#players").append("<div class='well col-md-4 column player-card'><div style='text-align: center'><a style='font-size: 1.2em'><strong>玩家" + String(i + 1) + "号：" + player.user_name + "</strong></a></div><br><img alt='140x140' src='../src/img/slide1.jpg' height=80% width=100% /></div>");
+                        }
+                    }
+                }
+            });
+        }
+        // 收到有人加入房间的信息
+        socket.on('someone_join', function (data) {
+            // alert('someone_join');
+            load();
+        });
+        // 收到有人离开房间的信息
+        socket.on('someone_leave', function (data) {
+            // alert('someone_leave');
+            load();
+        });
+        // 收到房主开始游戏的信息
+        socket.on('begin', function (data) {
+            // alert('begin');
+            var target_url = "game.html?name=" + user_name + "&room_id=" + String(room_id);
+            setTimeout("window.location.href='" + target_url + "'", 500);
+        });
+    </script>
+</head>
+
+<body>
+    <div class="container">
+        <div class="row clearfix">
+            <div class="col-md-12 column">
+                <div class="page-header">
+                    <img src="../src/img/power-grid-title.jpg" height=10% width=40%>
+                    &nbsp;&nbsp;&nbsp;
+                    <button type="button" class="btn btn-default btn-primary btn-lg" id="begin"
+                        onclick="begin()"></button>
+                    &nbsp;&nbsp;&nbsp;
+                    <button type="button" class="btn btn-default btn-warning btn-lg" id="exit"
+                        onclick="leave()"></button>
+                </div>
+                <div class="row clearfix" id="players">
+                    <!-- <div class="well col-md-4 column player-card">
+                        <div style="text-align: center">
+                            <a style="font-size: 1.2em"><strong>玩家6号：</strong></a>
+                        </div>
+                        <img alt="140x140" src="../src/img/slide1.jpg" height=80% width=100% />
+                    </div> -->
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="footer">Power Grid - CopyRight@copy 2019</div>
+</body>
+
+</html>

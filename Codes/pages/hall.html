@@ -1,0 +1,388 @@
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Power Grid 大厅</title>
+    <link rel="icon" type="image/x-icon" href="../src/img/power-grid-icon.png" />
+    <link rel="stylesheet" href="../src/css/bootstrap.min.css">
+    <script src="../src/jquery-3.3.1/jquery-3.3.1.min.js"></script>
+    <script src="../src/js/bootstrap.min.js"></script>
+    <style>
+        .container-fluid {
+            padding-top: 1%;
+        }
+
+        #slides {
+            width: 100%;
+            height: 50%;
+            padding: 0px;
+            text-align: center;
+        }
+
+        img {
+            width: 80%;
+            height: 100%;
+        }
+
+        .banner-grid.one {
+            padding: 2em;
+            margin: 0;
+            background: #1a95be;
+        }
+
+        .banner-grid.two {
+            padding: 2em;
+            margin: 0;
+            background: #f6b939;
+        }
+
+        .banner-grid.three {
+            padding: 2em;
+            margin: 0;
+            background: #ff7a85;
+        }
+
+        i.s1 {
+            background: url(../src/img/icons.png) no-repeat 0px 0px;
+        }
+
+        i.s2 {
+            background: url(../src/img/icons.png) no-repeat -60px 0px;
+        }
+
+        i.s3 {
+            background: url(../src/img/icons.png) no-repeat -120px 0px;
+        }
+
+        i.s1,
+        i.s2,
+        i.s3 {
+            width: 60px;
+            height: 60px;
+            display: inline-block;
+        }
+
+        h4 {
+            font-size: 3em;
+            color: #fff;
+            font-weight: 400;
+            text-transform: uppercase;
+            font-family: 'Fugaz One', cursive;
+        }
+
+        #col-banner {
+            padding-top: 2%;
+            padding-bottom: 2%;
+        }
+
+        #footer {
+            height: 6%;
+            line-height: 350%;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            text-align: center;
+            background: #333;
+            color: #fff;
+            font-family: Arial;
+            font-size: 12px;
+            letter-spacing: 1px;
+            cursor: default;
+        }
+    </style>
+    <script type="text/javascript">
+        function getQueryVariable(variable) {
+            var query = window.location.search.substring(1);
+            var vars = query.split("&");
+            for (var i = 0; i < vars.length; i++) {
+                var pair = vars[i].split("=");
+                if (pair[0] == variable) { return decodeURI(pair[1]); }
+            }
+            return (false);
+        }
+
+        var user_name = getQueryVariable("name");
+        $(document).ready(function () {
+            $("#user_name").text(user_name);
+            load();
+        });
+
+        function load() {
+            $("#room_list").empty();
+            $.ajax({
+                type: 'get',
+                url: '/get_all_rooms',
+                success: function (data) {
+                    if (data.err_code == 1) {
+                        document.getElementById("room_list").innerHTML = data.message;
+                    } else {
+                        var r_list = data.message;
+                        for (var i = 0; i < r_list.length; i++) {
+                            var room = r_list[i];
+                            $("#room_list").append("<tr><td>" + room["room_id"] + "</td><td>" + room["room_owner"] + "</td><td>" + room["room_memnum"] + "</td><td><label class='switch switch-label switch-pill switch-primary'><input id='student_switch_" + String(i) + "' class='switch-input' type='checkbox' defaultChecked='false'><span class='switch-slider' data-checked='&#x2713;' data-unchecked='&#x2715;'></span></label></td></tr>");
+                        }
+                    }
+                }
+            });
+        }
+        //指定5秒刷新一次 
+        window.onload = function () {
+            setTimeout('myrefresh()', 5000);
+        }
+        function myrefresh() {
+            load();
+            setTimeout('myrefresh()', 5000);
+        }
+        // function myrefresh() {
+        //     window.location.reload();
+        // }
+
+        var room_list = new Array();
+        function confirm_select() {
+            room_list.splice(0, room_list.length);
+            var size = document.getElementById("room_list").getElementsByTagName("tr").length;
+            var tb = document.getElementById("room_list");
+            var rows = tb.rows;
+            for (var i = 0; i < rows.length; i++) {
+                var cells = rows[i].cells;
+                var status = document.getElementById("student_switch_" + String(i)).checked;
+                if (status == true) {
+                    room_list.push(cells[0].innerHTML);
+                }
+            }
+            if (room_list[0]) {
+                // alert(room_list[0]);
+                joinroom(room_list[0]);
+            }
+            document.getElementById("close_modal").click();
+        }
+
+        function startgame() {
+            // alert('startgame');
+            $.ajax({
+                type: "get",
+                url: "/startgame",
+                // dataType: "json",
+                data: {
+                    name: user_name
+                },
+                success: function (data) {
+                    console.log(JSON.stringify(data.message))
+                    if (JSON.stringify(data.message) == "\"匹配成功\"") {
+                        alert("匹配成功");
+                        // var target_url = "room.html";
+                        var target_url = "room.html?roomid=" + String(data.room_id) + "&name=" + user_name + "&owner=0";
+                        // alert(target_url);
+                        setTimeout("window.location.href='" + target_url + "'", 500);
+                    } else {
+                        alert("匹配失败！");
+                        createroom();
+                    }
+                }
+            });
+        }
+
+        function createroom() {
+            // alert('createroom');
+            $.ajax({
+                type: "get",
+                url: "/createroom",
+                // dataType: "json",
+                data: {
+                    name: user_name
+                },
+                success: function (data) {
+                    console.log(JSON.stringify(data.message))
+                    if (JSON.stringify(data.message) == "\"创建成功\"") {
+                        alert("创建成功");
+                        // alert(data.room_id);
+                        // var target_url = "room.html";
+                        var target_url = "room.html?roomid=" + String(data.room_id) + "&name=" + user_name + "&owner=1";
+                        // alert(target_url);
+                        setTimeout("window.location.href='" + target_url + "'", 500);
+                    } else {
+                        alert("创建失败！");
+                    }
+                }
+            });
+        }
+
+        function joinroom(room_id) {
+            // alert('joinroom');
+            $.ajax({
+                type: "get",
+                url: "/joinroom",
+                // dataType: "json",
+                data: {
+                    name: user_name,
+                    room_id: room_id
+                },
+                success: function (data) {
+                    console.log(JSON.stringify(data.message))
+                    if (JSON.stringify(data.message) == "\"加入成功\"") {
+                        alert("加入成功");
+                        // var target_url = "room.html";
+                        var target_url = "room.html?roomid=" + String(data.room_id) + "&name=" + user_name + "&owner=0";
+                        // alert(target_url);
+                        setTimeout("window.location.href='" + target_url + "'", 500);
+                    } else {
+                        alert("创建失败！");
+                    }
+                }
+            });
+        }
+    </script>
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row clearfix">
+            <div class="col-md-12 column">
+                <nav class="navbar navbar-default" role="navigation">
+                    <div class="navbar-header">
+                        <a class="navbar-brand" href="#"
+                            style="font-family:'Courier New', Courier, monospace; font-size: 3em; font-weight: 1000">
+                            POWER GRID</a>
+                    </div>
+                    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                        <ul class="nav navbar-nav navbar-right">
+                            <li>
+                                <form class="navbar-form navbar-left" role="search">
+                                    <div class="form-group">
+                                        <input type="text" class="form-control" />
+                                    </div> <button type="submit" class="btn btn-default"
+                                        style="font-family:'Courier New', Courier, monospace; font-size: 1em; font-weight: 1000">搜索</button>
+                                </form>
+                            </li>
+                            <li>
+                                <a href="help.html"
+                                    style="font-family:'Courier New', Courier, monospace; font-size: 1em; font-weight: 1000">帮助</a>
+                            </li>
+                            <li class="dropdown">
+                                <a class="dropdown-toggle" data-toggle="dropdown"
+                                    style="font-family:'Courier New', Courier, monospace; font-size: 1em; font-weight: 1000; cursor: pointer">账号<strong
+                                        class="caret"></strong></a>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a id="user_name" style="cursor: pointer">用户名</a>
+                                    </li>
+                                    <li class="divider">
+                                    </li>
+                                    <li>
+                                        <a href="login.html">退出登录</a>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                </nav>
+                <div id="myCarousel" class="carousel slide">
+                    <ol class="carousel-indicators">
+                        <li data-target="#myCarousel" data-slide-to="0" class="active"></li>
+                        <li data-target="#myCarousel" data-slide-to="1"></li>
+                        <li data-target="#myCarousel" data-slide-to="2"></li>
+                        <li data-target="#myCarousel" data-slide-to="3"></li>
+                        <li data-target="#myCarousel" data-slide-to="4"></li>
+                        <li data-target="#myCarousel" data-slide-to="5"></li>
+                    </ol>
+                    <div id="slides" class="carousel-inner">
+                        <div class="item active">
+                            <p style=" text-align: center;"><img src="../src/img/slide0.jpg" alt="First slide"></p>
+                        </div>
+                        <div class="item">
+                            <p style="text-align: center;"><img src="../src/img/slide1.jpg" alt="Second slide"></p>
+                        </div>
+                        <div class="item">
+                            <p style="text-align: center;"><img src="../src/img/slide2.jpg" alt="Third slide"></p>
+                        </div>
+                        <div class="item">
+                            <p style="text-align: center;"><img src="../src/img/slide3.jpg" alt="Fourth slide"></p>
+                        </div>
+                        <div class="item">
+                            <p style="text-align: center;"><img src="../src/img/slide4.jpg" alt="Fifth slide"></p>
+                        </div>
+                        <div class="item">
+                            <p style="text-align: center;"><img src="../src/img/slide5.jpg" alt="sixth slide"></p>
+                        </div>
+                    </div>
+                    <a class="left carousel-control" href="#myCarousel" role="button" data-slide="prev">
+                        <span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
+                        <span class="sr-only">Previous</span>
+                    </a>
+                    <a class="right carousel-control" href="#myCarousel" role="button" data-slide="next">
+                        <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
+                        <span class="sr-only">Next</span>
+                    </a>
+                </div>
+            </div>
+            <div class="col-md-12 column" id="col-banner">
+                <div class="banner-bot-grids">
+                    <div class="col-md-4 banner-grid one" onclick="startgame()" style="cursor:pointer">
+                        <div class="col-md-3 icon">
+                            <i class="s1"> </i>
+                        </div>
+                        <div class="col-md-9 icon-text">
+                            <h4>开始匹配</h4>
+                        </div>
+                        <div class="clearfix"> </div>
+                    </div>
+                    <div class="col-md-4 banner-grid two" onclick="createroom()" style="cursor:pointer">
+                        <div class="col-md-3 icon">
+                            <i class="s2"> </i>
+                        </div>
+                        <div class="col-md-9 icon-text">
+                            <h4>创建房间</h4>
+                        </div>
+                        <div class="clearfix"> </div>
+                    </div>
+                    <div class="col-md-4 banner-grid three" style="cursor:pointer" data-toggle="modal"
+                        data-target="#myModal">
+                        <div class="col-md-3 icon">
+                            <i class="s3"> </i>
+                        </div>
+                        <div class="col-md-9 icon-text">
+                            <h4>加入房间</h4>
+                        </div>
+                        <div class="clearfix"> </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                    <h3 class="modal-title" id="myModalLabel">加入房间</h3>
+                </div>
+                <div class="modal-body">
+                    <div id="spy-example1" data-spy="scroll" data-target="#navbar-example1" data-offset="65"
+                        style="position: relative; height: 300px; overflow: auto; margin-top: .5rem; overflow-y: scroll;">
+                        <table class="table table-responsive-lg table-striped">
+                            <thead>
+                                <tr>
+                                    <th>房间号</th>
+                                    <th>房主</th>
+                                    <th>房间人数</th>
+                                    <th>勾选</th>
+                                </tr>
+                            </thead>
+                            <tbody id="room_list">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" id="close_modal" data-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-primary" onclick="confirm_select()">确认加入</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="footer">Power Grid - CopyRight@copy 2019</div>
+</body>
+
+</html>

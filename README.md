@@ -12,10 +12,16 @@ A board game software named Power Grid.
 
 ## TODO
 
-- [ ] USA Map
-- [ ] Login-in module
-- [ ] Server
-- [ ] Client
+- [x] 2019.4.20-Build USA Map
+- [ ] 界面
+    - [ ] 显示回合顺序
+    - [ ] 玩家的信息（昵称、金币、资源、电厂、城市数量）
+    - [ ] 弹窗显示在拍卖的电厂
+    - [ ] 资源面板
+- [ ] 2019.4.20-Sign In/Up module
+- [ ] City Cards Icons
+- [ ] Operations:
+    - [ ] Buy
 
 ## Collaborators
 
